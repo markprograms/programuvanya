@@ -1,0 +1,201 @@
+import sys
+import requests
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
+import win32com.client
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(800, 600)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+
+        self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(330, 160, 113, 20))
+        self.lineEdit.setObjectName("lineEdit")
+
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineEdit_2.setGeometry(QtCore.QRect(330, 260, 113, 20))
+        self.lineEdit_2.setObjectName("lineEdit_2")
+
+        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton.setGeometry(QtCore.QRect(350, 210, 75, 23))
+        self.pushButton.setStyleSheet("color: rgb(255, 255, 255);\n"
+                                      "background-color: rgb(0, 85, 255);")
+        self.pushButton.setObjectName("pushButton")
+
+        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
+        self.comboBox.setGeometry(QtCore.QRect(350, 290, 91, 22))
+        self.comboBox.setObjectName("comboBox")
+        self.populateComboBox(self.comboBox)
+
+        self.comboBox_2 = QtWidgets.QComboBox(self.centralwidget)
+        self.comboBox_2.setGeometry(QtCore.QRect(350, 120, 91, 22))
+        self.comboBox_2.setObjectName("comboBox_2")
+        self.populateComboBox(self.comboBox_2)
+
+        self.speechButton = QtWidgets.QPushButton(self.centralwidget)
+        self.speechButton.setGeometry(QtCore.QRect(430, 210, 75, 23))
+        self.speechButton.setStyleSheet("color: rgb(255, 255, 255);\n"
+                                        "background-color: rgb(0, 85, 255);")
+        self.speechButton.setObjectName("speechButton")
+
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        self.pushButton.clicked.connect(self.translate_text)
+        self.comboBox.currentIndexChanged.connect(self.translate_text)
+        self.comboBox_2.currentIndexChanged.connect(self.clear_text)
+        self.speechButton.clicked.connect(self.speak_text)
+
+        # Setup Enter key press to trigger translate button
+        self.lineEdit.returnPressed.connect(self.pushButton.click)
+        self.lineEdit_2.returnPressed.connect(self.pushButton.click)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.pushButton.setText(_translate("MainWindow", "Translate"))
+        self.speechButton.setText(_translate("MainWindow", "Speak"))
+        self.populateComboBoxLabels()
+
+    def populateComboBox(self, comboBox):
+        languages = ["English", "Chinese", "Spanish", "French", "Arabic", "Ukrainian", "Portuguese", "Indonesian", "Japanese", "German"]
+        comboBox.addItems(languages)
+
+    def populateComboBoxLabels(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.comboBox.setItemText(0, _translate("MainWindow", "English"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "Chinese"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "Spanish"))
+        self.comboBox.setItemText(3, _translate("MainWindow", "French"))
+        self.comboBox.setItemText(4, _translate("MainWindow", "Arabic"))
+        self.comboBox.setItemText(5, _translate("MainWindow", "Ukrainian"))
+        self.comboBox.setItemText(6, _translate("MainWindow", "Portuguese"))
+        self.comboBox.setItemText(7, _translate("MainWindow", "Indonesian"))
+        self.comboBox.setItemText(8, _translate("MainWindow", "Japanese"))
+        self.comboBox.setItemText(9, _translate("MainWindow", "German"))
+
+        self.comboBox_2.setItemText(0, _translate("MainWindow", "English"))
+        self.comboBox_2.setItemText(1, _translate("MainWindow", "Chinese"))
+        self.comboBox_2.setItemText(2, _translate("MainWindow", "Spanish"))
+        self.comboBox_2.setItemText(3, _translate("MainWindow", "French"))
+        self.comboBox_2.setItemText(4, _translate("MainWindow", "Arabic"))
+        self.comboBox_2.setItemText(5, _translate("MainWindow", "Ukrainian"))
+        self.comboBox_2.setItemText(6, _translate("MainWindow", "Portuguese"))
+        self.comboBox_2.setItemText(7, _translate("MainWindow", "Indonesian"))
+        self.comboBox_2.setItemText(8, _translate("MainWindow", "Japanese"))
+        self.comboBox_2.setItemText(9, _translate("MainWindow", "German"))
+
+    def translate_text(self):
+        try:
+            source_text = self.lineEdit.text()
+            source_lang = self.comboBox_2.currentText()
+            target_lang = self.comboBox.currentText()
+
+            lang_code_map = {
+                "English": "en",
+                "Chinese": "zh",
+                "Spanish": "es",
+                "French": "fr",
+                "Arabic": "ar",
+                "Ukrainian": "uk",
+                "Portuguese": "pt",
+                "Indonesian": "id",
+                "Japanese": "ja",
+                "German": "de"
+            }
+
+            source_lang_code = lang_code_map.get(source_lang, "en")
+            target_lang_code = lang_code_map.get(target_lang, "en")
+
+            translated_text = self.perform_translation(source_text, source_lang_code, target_lang_code)
+            self.lineEdit_2.setText(translated_text)
+        except Exception as e:
+            QMessageBox.critical(None, "Error", f"An error occurred: {str(e)}")
+
+    def clear_text(self):
+        self.lineEdit.clear()
+        self.lineEdit_2.clear()
+
+    def perform_translation(self, text, source_lang, target_lang):
+        try:
+            url = "https://translate.googleapis.com/translate_a/single"
+            params = {
+                "client": "gtx",
+                "sl": source_lang,
+                "tl": target_lang,
+                "dt": "t",
+                "q": text,
+            }
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                result = response.json()
+                translated_text = result[0][0][0]
+                return translated_text
+            else:
+                return "Error translating text"
+        except Exception as e:
+            QMessageBox.critical(None, "Error", f"An error occurred during translation: {str(e)}")
+            return "Error during translation"
+
+    def speak_text(self):
+        try:
+            text = self.lineEdit_2.text()
+            if not text:
+                QMessageBox.warning(None, "Warning", "No text to speak")
+                return
+
+            # Initialize SAPI voice
+            speaker = win32com.client.Dispatch("SAPI.SpVoice")
+            
+            # Get all available voices
+            voices = speaker.GetVoices()
+            
+            # Find the voice that matches the selected language code
+            selected_voice = None
+            lang_code_map = {
+                "English": "en",
+                "Chinese": "zh",
+                "Spanish": "es",
+                "French": "fr",
+                "Arabic": "ar",
+                "Ukrainian": "uk",
+                "Portuguese": "pt",
+                "Indonesian": "id",
+                "Japanese": "ja",
+                "German": "de"
+            }
+            target_lang_code = lang_code_map.get(self.comboBox.currentText(), "en")
+            for voice in voices:
+                description = voice.GetDescription().lower()
+                if target_lang_code in description:
+                    selected_voice = voice
+                    break
+            
+            # If a matching voice is found, use it
+            if selected_voice:
+                speaker.Voice = selected_voice
+
+            # Speak the text
+            speaker.Speak(text)
+        except Exception as e:
+            QMessageBox.critical(None, "Error", f"An error occurred while speaking: {str(e)}")
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
